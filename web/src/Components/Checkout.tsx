@@ -26,7 +26,10 @@ export function Login() {
   );
 };
 
-const SERVER_URL = "https://ec2-18-230-61-195.sa-east-1.compute.amazonaws.com"
+// Since we're currently deploying the webpage and the server from the same host
+// we are able to use the window location to avoid hardcoding a value here.
+const SERVER_URL = window.location.host;
+const SERVER_PORT = "4000";
 
 export function Checkout() {
   const [isDone, setDone] = useState(false);
@@ -84,18 +87,15 @@ export function Checkout() {
   }, []);
 
   function createOrder() {
-    return fetch(`${SERVER_URL}/api/create-order`, {
+    return fetch(`${SERVER_URL}:${SERVER_PORT}/api/create-order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        cart: [
-          {
-            id: "YOUR_PRODUCT_ID",
-            quantity: "YOUR_PRODUCT_QUANTITY",
-          },
-        ],
+        items: cart,
+        customer: customer,
+        shipping: shipping,
       }),
     })
       .then((response) => response.json())
@@ -103,7 +103,7 @@ export function Checkout() {
   }
 
   function onApprove(data: any) {
-    return fetch(`${SERVER_URL}/api/capture-order`, {
+    return fetch(`${SERVER_URL}:${SERVER_PORT}/api/capture-order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -211,6 +211,8 @@ export function Checkout() {
                     Address Line 2
                   </label>
                   <input
+                    required
+                    disabled={isDone}
                     type="text"
                     id="address2"
                     name="address2"
