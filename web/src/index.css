@@ -1,0 +1,86 @@
+@import url(https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css);
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&display=swap");
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #0ae;
+
+  background-image: -webkit-gradient(linear, 0 0, 0 100%,
+      color-stop(.5, rgba(255, 255, 255, .2)),
+      color-stop(.5, transparent), to(transparent));
+}
+
+
+.text-primary {
+  @apply text-blue-500 !important;
+}
+
+.btn-primary {
+  @apply border-blue-500 bg-blue-500 text-white;
+}
+
+.shadow-md {
+  box-shadow: 0px 5px 10px rgba(90, 116, 148, 0.3);
+}
+
+.sidebar {
+  @apply w-[380px] min-h-screen shadow-md bg-white fixed top-0 right-0 z-10 transition duration-500;
+  transform: translateX(100%);
+}
+
+.sidebar.active {
+  transform: translateX(0);
+}
+
+
+.sidebar-overlay {
+  @apply fixed top-0 left-0 w-full h-full bg-black bg-opacity-40 transition duration-500 opacity-0 invisible;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sd-body {
+  @apply flex flex-col justify-between p-4 max-h-[calc(100vh-10rem)] overflow-x-hidden;
+}
+
+.sd-body ul {
+  @apply inline-block w-full mb-0 p-0;
+}
+
+.sd-body ul li {
+  @apply list-none mb-2;
+}
+
+.sd-body ul li .sd-link {
+  @apply inline-block p-4 w-full font-bold bg-gray-300 rounded cursor-pointer text-center no-underline;
+}
+
+.sd-button {
+  @apply inline-block p-4 w-1/2 bg-gray-300 no-underline text-center;
+}
+
+.sd-button:hover {
+  @apply font-bold bg-gray-400 cursor-pointer;
+}
+
+/* Bottom right text */
+.price {
+  @apply absolute bottom-[0.5rem] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-600 font-bold;
+}
