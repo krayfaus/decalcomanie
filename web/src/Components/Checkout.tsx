@@ -28,7 +28,8 @@ export function Login() {
 
 // Since we're currently deploying the webpage and the server from the same host
 // we are able to use the window location to avoid hardcoding a value here.
-const SERVER_URL = window.location.host;
+const runningProduction = process.env.NODE_ENV === "production";
+const SERVER_URL = runningProduction ? window.location.host : "http://54.94.175.32";
 const SERVER_PORT = "4000";
 
 export function Checkout() {
@@ -87,7 +88,9 @@ export function Checkout() {
   }, []);
 
   function createOrder() {
-    return fetch(`${SERVER_URL}:${SERVER_PORT}/api/create-order`, {
+    const apiUrl = `${SERVER_URL}:${SERVER_PORT}/api/create-order`;
+    console.log()
+    return fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
