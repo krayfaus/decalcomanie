@@ -24,9 +24,11 @@ export function MainPage() {
         <CartProvider>
           <StoreProvider>
             <PayPalScriptProvider options={{
-              clientId: "test",
+              clientId: "AdfcOLIp_S_3YgO_miIAaWJ-Blwo82HFNHBlNaZNEaW126fSCd0DTM9jKtq5xpysx751qGdXo_PPvDae",
               currency: "USD",
+              locale: "en_US",
               intent: "capture",
+              buyerCountry: "US"
             }}>
               <Routes>
                 <Route path="/" element={<Store randomize={randomize} unsetRandomize={() => setRandomize(false)} />} />

@@ -39,7 +39,7 @@ export function Store(props: { randomize: boolean, unsetRandomize: () => void })
         .then((data) => {
           const item: StoreItem = {
             id: colorCode,
-            title: data.name.value,
+            name: data.name.value,
             price: (Math.random() * 1000 + 1).toFixed(2).toString(),
           };
           
@@ -64,16 +64,13 @@ export function Store(props: { randomize: boolean, unsetRandomize: () => void })
   function addCartItem(event: React.MouseEvent<HTMLButtonElement>, storeItem: StoreItem) {
     const index = cart.findIndex((element) => element.id === storeItem.id);
     if (index > -1) {
-      cart[index].quantity++;
+      return;
     } else {
-      cart.push({
-        ...storeItem,
-        quantity: 1,
-      });
+      cart.push(storeItem);
     }
 
     setCart(cart);
-    console.log('Product added:', storeItem);
+    console.log('> Product added to cart:', storeItem);
   }
 
   return (
@@ -91,7 +88,7 @@ export function Store(props: { randomize: boolean, unsetRandomize: () => void })
                   <div className="absolute sm:top-8 top-4 left-4 sm:left-8 flex justify-start items-start flex-col space-y-2">
                     <div>
                       <p className="transition duration-500 text-xl leading-5 text-gray-600">
-                        {item.title}
+                        {item.name}
                       </p>
                     </div>
                     <div>

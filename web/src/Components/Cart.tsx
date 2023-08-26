@@ -1,5 +1,5 @@
 import React, { useState, useReducer } from 'react';
-import type { CartItem } from '../Domain/Cart';
+import type { StoreItem } from '../Domain/Store';
 import { useCartDispatch, useCartState } from '../Hooks/Cart';
 import { Link } from 'react-router-dom';
 import ColorSquare from './ColorSquare';
@@ -18,7 +18,7 @@ type CartCallbacks = {
 type MouseCallback = (event: React.MouseEvent<HTMLDivElement>, itemId: string) => void;
 type ChangeCallback = (event: React.ChangeEvent<HTMLSelectElement>, itemId: string) => void;
 
-export function Item(props: { item: CartItem, removeItem?: MouseCallback}) {
+export function Item(props: { item: StoreItem, removeItem?: MouseCallback}) {
   let hasRemove = props.removeItem !== undefined;
 
   return (
@@ -27,7 +27,7 @@ export function Item(props: { item: CartItem, removeItem?: MouseCallback}) {
         <ColorSquare hexValue={props.item.id} />
       </div>
       <div className="ml-4 flex-grow">
-        <h3 className="text-lg font-semibold">{props.item.title}</h3>
+        <h3 className="text-lg font-semibold">{props.item.name}</h3>
         <p className="text-gray-600">$ {props.item.price}</p>
         <p className="text-gray-600">#{props.item.id}</p>
         {hasRemove && (

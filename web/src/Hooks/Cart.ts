@@ -1,9 +1,9 @@
 import type { Dispatch } from 'react';
 import { useContext } from 'react';
-import type { CartItem } from '../Domain/Cart';
+import type { StoreItem } from '../Domain/Store';
 import { CartStateContext, CartDispatchContext } from '../Providers/CartProvider';
 
-export const useCartDispatch = (): Dispatch<CartItem[]> => {
+export const useCartDispatch = (): Dispatch<StoreItem[]> => {
   const cartDispatch = useContext(CartDispatchContext);
 
   if (typeof cartDispatch === 'undefined') {
@@ -13,7 +13,7 @@ export const useCartDispatch = (): Dispatch<CartItem[]> => {
   return cartDispatch;
 };
 
-export const useCartState = (): CartItem[] => {
+export const useCartState = (): StoreItem[] => {
   const cartState = useContext(CartStateContext);
 
   if (typeof cartState === 'undefined') {

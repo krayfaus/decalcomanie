@@ -3,6 +3,6 @@
  */
 export type StoreItem = {
   id: string,
-  title: string,
+  name: string,
   price: string,
 };

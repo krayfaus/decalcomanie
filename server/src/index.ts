@@ -3,6 +3,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import BodyParser from 'body-parser'; // Import the body-parser package
 import qs from 'qs';
+import { getUuid } from './Uuid';
 const lookup = require('country-code-lookup')
 
 dotenv.config({ path: "./.env" })
@@ -46,12 +47,18 @@ type Shipping = {
   address1: string,
   address2: string,
   zipCode: string,
+  city: string,
   state: string,
   country: string,
 };
 
-function getCountryCode(countryName: string): string {
-  return lookup.byCountry(countryName);
+function getCountryCode(countryName: string): string | null {
+  const data = lookup.byCountry(countryName);
+  if (data) {
+    return data.iso2;
+  }
+
+  return null;
 }
 
 async function acquireAccessToken() {
@@ -92,8 +99,9 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
 
   try {
     const accessToken = await acquireAccessToken();
-    const total = items.reduce((total, item) => total + Number(item.price), 0).toFixed(2);
+    const total = items.reduce((total: number, item) => total + Number(item.price), 0).toFixed(2);
     const countryCode = getCountryCode(shipping.country);
+    const phoneNumber = customer.phone.replace(/\+|[^+\d]/g, '');
 
     // Construct the PayPal order request payload
     const orderPayload = {
@@ -119,35 +127,52 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
               value: item.price,
             },
           })),
+
+          shipping: {
+            name: {
+              full_name: [customer.firstName, customer.lastName].join(' '),
+            },
+            address: {
+              address_line_1: shipping.address1,
+              address_line_2: shipping.address2,
+              admin_area_1: shipping.state,
+              admin_area_2: shipping.city,
+              postal_code: shipping.zipCode,
+              country_code: countryCode,
+            }
+          }
         },
       ],
       payment_source: {
         "paypal": {
           experience_context: {
-            payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
-            user_action: "PAY_NOW",
+            shipping_preference: "SET_PROVIDED_ADDRESS",
+            landing_page: "GUEST_CHECKOUT",
             brand_name: "Décalcomanie",
             locale: "en-US",
-            // landing_page: "GUEST_CHECKOUT",
-            email_address: customer.email,
-            name: {
-              given_name: customer.firstName,
-              surname: customer.lastName,
+          },
+          email_address: customer.email,
+          name: {
+            given_name: customer.firstName,
+            surname: customer.lastName,
+          },
+          phone: {
+            phone_type: "MOBILE",
+            phone_number: {
+              national_number: phoneNumber,
             },
-            phone: customer.phone,
-            address: {
-              address_line_1: shipping.address1,
-              address_line_2: shipping.address2,
-              admin_area_1: shipping.state,
-              postal_code: shipping.zipCode,
-              country_code: countryCode,
-            }
+          },
+          address: {
+            address_line_1: shipping.address1,
+            address_line_2: shipping.address2,
+            postal_code: shipping.zipCode,
+            admin_area_1: shipping.state,
+            admin_area_2: shipping.city,
+            country_code: countryCode,
           }
         }
       }
     };
-
-    console.log(JSON.stringify(orderPayload))
 
     // Make a POST request to create the PayPal order in the Sandbox environment.
     const response = await axios.post(
@@ -155,35 +180,33 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
       orderPayload,
       {
         headers: {
-          'PayPal-Request-Id': '7b92603e-77ed-4896-8e78-5dea2050476a',
           'Content-Type': 'application/json',
+          'PayPal-Request-Id': getUuid(),
           Authorization: `Bearer ${accessToken}`,
         },
       }
     );
 
     const orderId = response.data.id;
-    res.json({ orderId });
+    console.log("> Created order:", orderId);
 
+    res.json({ order: orderId });
   } catch (error: any) {
     console.error('Error creating PayPal order:', error);
     res.status(500).json({ error: 'An error occurred while creating the PayPal order.' });
-
-    console.log(error.response.data);
   }
 });
 
 // Capture (execute) a PayPal order payment.
 app.post('/api/capture-order', async (req: Request, res: Response) => {
-  const { orderId } = req.body;
+  const { order }: { order: string } = req.body;
 
   try {
     const accessToken = await acquireAccessToken();
 
-    // Make a POST request to capture the payment for the given order ID
-    const response = await axios.post(
-      `${API_URL}/v2/checkout/orders/${orderId}/capture`,
-      {},
+    // Make a GET request to confirm the payment for the given order.
+    const response = await axios.get(
+      `${API_URL}/v2/checkout/orders/${order}`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -201,5 +224,5 @@ app.post('/api/capture-order', async (req: Request, res: Response) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${PORT}`);
+  console.log(`⚡️[server]: Server is running at port ${PORT}.`);
 });
