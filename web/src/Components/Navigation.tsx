@@ -33,10 +33,6 @@ export function Navigation(props: { toggleCart: () => void, setRandomize: () => 
                 </button>
               </div>
               <div className="space-x-4">
-                <Link to="/orders" className="text-gray-700 hover:text-gray-900">
-                  My Orders
-                </Link>
-                <span className="text-black">|</span>
                 <a
                   href="#cart"
                   className="text-gray-700 hover:text-gray-900"

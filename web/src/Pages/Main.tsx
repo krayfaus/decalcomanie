@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Navigation } from '../Components/Navigation';
 import { Cart } from '../Components/Cart';
 import { Store } from '../Components/Store';
-import { Orders } from '../Components/Orders';
 import { Checkout } from '../Components/Checkout';
 import { CartProvider } from '../Providers/CartProvider';
 import { StoreProvider } from '../Providers/StoreProvider';
@@ -32,7 +31,6 @@ export function MainPage() {
             }}>
               <Routes>
                 <Route path="/" element={<Store randomize={randomize} unsetRandomize={() => setRandomize(false)} />} />
-                <Route path="/orders" element={<Orders />} />
                 <Route path="/checkout" element={<Checkout />} />
               </Routes>
             </PayPalScriptProvider>

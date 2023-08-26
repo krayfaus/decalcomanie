@@ -24,7 +24,6 @@
       color-stop(.5, transparent), to(transparent));
 }
 
-
 .text-primary {
   @apply text-blue-500 !important;
 }
@@ -45,7 +44,6 @@
 .sidebar.active {
   transform: translateX(0);
 }
-
 
 .sidebar-overlay {
   @apply fixed top-0 left-0 w-full h-full bg-black bg-opacity-40 transition duration-500 opacity-0 invisible;
@@ -78,9 +76,4 @@
 
 .sd-button:hover {
   @apply font-bold bg-gray-400 cursor-pointer;
-}
-
-/* Bottom right text */
-.price {
-  @apply absolute bottom-[0.5rem] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-600 font-bold;
 }
