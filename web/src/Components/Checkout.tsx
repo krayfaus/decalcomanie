@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
+import { PayPalButtons } from "@paypal/react-paypal-js";
 import { useCartState, useCartDispatch } from '../Hooks/Cart';
 import { Item } from './Cart';
-import PixelSpinner from './PixelSpinner';
 
 // Since we're currently deploying the webpage and the server from the same host
 // we are able to use the window location to avoid hardcoding a value here.
@@ -67,10 +66,8 @@ export function Checkout() {
     setDone(true);
   };
 
-  function createOrder(): Promise<string> {
-    const apiUrl = `${SERVER_URL}:${SERVER_PORT}/api/create-order`;
-    console.log()
-    return fetch(apiUrl, {
+  function createOrder() {
+    return fetch(`${SERVER_URL}:${SERVER_PORT}/api/create-order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -82,35 +79,40 @@ export function Checkout() {
       }),
     })
       .then((response) => response.json())
-      .then((data) => data.order);
+      .then((data) => {
+        // Since the transaction id is something we create,
+        // we're responsible for storing it with the client's order.
+        setLastPurchase(data.transactionId);
+        return data.orderId;
+      });
   }
 
   function onApprove(data: any, actions: any) {
-    return actions.order.capture().then(function (orderData: any) {
-      return fetch(`${SERVER_URL}:${SERVER_PORT}/api/capture-order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          order: data.orderID
-        })
+    console.log("> Approved order:", data);
+    return fetch(`${SERVER_URL}:${SERVER_PORT}/api/get-order`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orderId: data.orderID,
       })
-        .then((response) => response.json())
-        .then((orderData) => {
-          setLastPurchase(orderData.id);
-          setCart([]);
-          setPending(false);
-        });
-    });
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Empty cart and show thank you message.
+        setCart([]);
+        setPending(false);
+        console.log("Order details:", data);
+      });
   }
 
   // Prevent access to '/checkout' with an empty cart.
   useEffect(() => {
-    if (!hasItems) {
+    if (!hasItems && pending) {
       navigate('/');
     }
-  }, []);
+  }, [hasItems, navigate]);
 
   return (
     <React.Fragment>

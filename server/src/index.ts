@@ -13,22 +13,25 @@ const PORT = process.env.PORT;
 const API_URL = process.env.PAYPAL_API_URL as string;
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID as string;
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET as string;
+const Enviroment = process.env.NODE_ENV;
 
 app.use(BodyParser.json());
 
-/// Allow CORS for testing.
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "OPTIONS, GET, POST, PUT, PATCH, DELETE"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  next();
-});
+if (Enviroment === "development") {
+  /// Allow CORS for testing.
+  app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "OPTIONS, GET, POST, PUT, PATCH, DELETE"
+    );
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+}
 
 type Product = {
   id: string,
@@ -99,9 +102,13 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
 
   try {
     const accessToken = await acquireAccessToken();
+
+    // Todo: improve data normalization.
+    const phoneNumber = customer.phone.replace(/\+|[^+\d]/g, '');
+    const customerFullName = [customer.firstName, customer.lastName].join(' ');
     const total = items.reduce((total: number, item) => total + Number(item.price), 0).toFixed(2);
     const countryCode = getCountryCode(shipping.country);
-    const phoneNumber = customer.phone.replace(/\+|[^+\d]/g, '');
+    const transactionId = getUuid();
 
     // Construct the PayPal order request payload
     const orderPayload = {
@@ -130,7 +137,7 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
 
           shipping: {
             name: {
-              full_name: [customer.firstName, customer.lastName].join(' '),
+              full_name: customerFullName,
             },
             address: {
               address_line_1: shipping.address1,
@@ -181,35 +188,39 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'PayPal-Request-Id': getUuid(),
+          // 'PayPal-Request-Id': transactionId,
           Authorization: `Bearer ${accessToken}`,
         },
       }
     );
 
-    const orderId = response.data.id;
-    console.log("> Created order:", orderId);
+    if (Enviroment === "development") {
+      console.log("> Transaction:", transactionId)
+      console.log("> Order details:", response.data);
+      console.log("-------------------------------")
+    }
 
-    res.json({ order: orderId });
+    res.json({ orderId: response.data.id, transactionId: transactionId });
   } catch (error: any) {
     console.error('Error creating PayPal order:', error);
     res.status(500).json({ error: 'An error occurred while creating the PayPal order.' });
   }
 });
 
-// Capture (execute) a PayPal order payment.
-app.post('/api/capture-order', async (req: Request, res: Response) => {
-  const { order }: { order: string } = req.body;
+// Get the order payment information.
+app.post('/api/get-order', async (req: Request, res: Response) => {
+  const { orderId, transactionId } = req.body;
 
   try {
     const accessToken = await acquireAccessToken();
 
     // Make a GET request to confirm the payment for the given order.
     const response = await axios.get(
-      `${API_URL}/v2/checkout/orders/${order}`,
+      `${API_URL}/v2/checkout/orders/${orderId}`,
       {
         headers: {
           'Content-Type': 'application/json',
+          'PayPal-Request-Id': transactionId,
           Authorization: `Bearer ${accessToken}`,
         },
       }
@@ -217,8 +228,13 @@ app.post('/api/capture-order', async (req: Request, res: Response) => {
 
     // Return the captured payment details to the client
     res.json(response.data);
-  } catch (error) {
-    console.error('Error capturing PayPal order:', error);
+  } catch (error: any) {
+    console.error('Error capturing PayPal order:', error, '\n');
+
+    if (Enviroment === "development") {
+      console.log(error?.response?.data);
+    }
+
     res.status(500).json({ error: 'An error occurred while capturing the PayPal order.' });
   }
 });

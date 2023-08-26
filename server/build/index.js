@@ -25,17 +25,20 @@ const PORT = process.env.PORT;
 const API_URL = process.env.PAYPAL_API_URL;
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
+const Enviroment = process.env.NODE_ENV;
 app.use(body_parser_1.default.json());
-/// Allow CORS for testing.
-app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, PATCH, DELETE");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-    }
-    next();
-});
+if (Enviroment === "development") {
+    /// Allow CORS for testing.
+    app.use((req, res, next) => {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, PATCH, DELETE");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        if (req.method === "OPTIONS") {
+            return res.sendStatus(200);
+        }
+        next();
+    });
+}
 function getCountryCode(countryName) {
     const data = lookup.byCountry(countryName);
     if (data) {
@@ -73,9 +76,12 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
     const { items, customer, shipping } = req.body;
     try {
         const accessToken = yield acquireAccessToken();
+        // Todo: improve data normalization.
+        const phoneNumber = customer.phone.replace(/\+|[^+\d]/g, '');
+        const customerFullName = [customer.firstName, customer.lastName].join(' ');
         const total = items.reduce((total, item) => total + Number(item.price), 0).toFixed(2);
         const countryCode = getCountryCode(shipping.country);
-        const phoneNumber = customer.phone.replace(/\+|[^+\d]/g, '');
+        const transactionId = (0, Uuid_1.getUuid)();
         // Construct the PayPal order request payload
         const orderPayload = {
             intent: 'CAPTURE',
@@ -102,7 +108,7 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
                     })),
                     shipping: {
                         name: {
-                            full_name: [customer.firstName, customer.lastName].join(' '),
+                            full_name: customerFullName,
                         },
                         address: {
                             address_line_1: shipping.address1,
@@ -149,28 +155,33 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
         const response = yield axios_1.default.post(`${API_URL}/v2/checkout/orders`, orderPayload, {
             headers: {
                 'Content-Type': 'application/json',
-                'PayPal-Request-Id': (0, Uuid_1.getUuid)(),
+                // 'PayPal-Request-Id': transactionId,
                 Authorization: `Bearer ${accessToken}`,
             },
         });
-        const orderId = response.data.id;
-        console.log("> Created order:", orderId);
-        res.json({ order: orderId });
+        if (Enviroment === "development") {
+            console.log("> Transaction:", transactionId);
+            console.log("> Order details:", response.data);
+            console.log("-------------------------------");
+        }
+        res.json({ orderId: response.data.id, transactionId: transactionId });
     }
     catch (error) {
         console.error('Error creating PayPal order:', error);
         res.status(500).json({ error: 'An error occurred while creating the PayPal order.' });
     }
 }));
-// Capture (execute) a PayPal order payment.
-app.post('/api/capture-order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { order } = req.body;
+// Get the order payment information.
+app.post('/api/get-order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { orderId, transactionId } = req.body;
     try {
         const accessToken = yield acquireAccessToken();
         // Make a GET request to confirm the payment for the given order.
-        const response = yield axios_1.default.get(`${API_URL}/v2/checkout/orders/${order}`, {
+        const response = yield axios_1.default.get(`${API_URL}/v2/checkout/orders/${orderId}`, {
             headers: {
                 'Content-Type': 'application/json',
+                'PayPal-Request-Id': transactionId,
                 Authorization: `Bearer ${accessToken}`,
             },
         });
@@ -178,7 +189,10 @@ app.post('/api/capture-order', (req, res) => __awaiter(void 0, void 0, void 0, f
         res.json(response.data);
     }
     catch (error) {
-        console.error('Error capturing PayPal order:', error);
+        console.error('Error capturing PayPal order:', error, '\n');
+        if (Enviroment === "development") {
+            console.log((_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data);
+        }
         res.status(500).json({ error: 'An error occurred while capturing the PayPal order.' });
     }
 }));
