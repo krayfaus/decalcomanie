@@ -8,19 +8,21 @@ import PixelSpinner from './PixelSpinner';
 // Since we're currently deploying the webpage and the server from the same host
 // we are able to use the window location to avoid hardcoding a value here.
 const runningProduction = process.env.NODE_ENV === "production";
-const SERVER_URL = runningProduction ? window.location.host : "http://localhost";
+const SERVER_URL = runningProduction ? 'http://' + window.location.host : "http://localhost";
 const SERVER_PORT = "4000";
 
 export function Checkout() {
-  const [lastPurchase, setLastPurchase] = useState('93ded77e-43c2-11ee-be56-0242ac120002');
+  const [lastPurchase, setLastPurchase] = useState('');
   const [pending, setPending] = useState(true);
   const [isDone, setDone] = useState(false);
+
+  const navigate = useNavigate();
   const cart = useCartState();
   const setCart = useCartDispatch();
   const hasItems = cart.length > 0;
   const totalCost = cart.reduce((total, item) => total + Number(item.price), 0).toFixed(2);
-  const navigate = useNavigate();
 
+  // These fields are pre-filled as requested.
   const [customer, setCustomer] = useState({
     firstName: 'John',
     lastName: 'Doe',
@@ -46,7 +48,7 @@ export function Checkout() {
     }));
   };
 
-  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  function handleShippingChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setShipping((prevShipping) => ({
       ...prevShipping,
@@ -54,22 +56,16 @@ export function Checkout() {
     }));
   };
 
-  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
+  function handleSubmit(e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     e.preventDefault();
 
+    // Any pre-processing on customer data would be done at this point.
     // console.log('Customer:', customer);
     // console.log('Shipping:', shipping);
     // console.log('Cart:', cart);
 
     setDone(true);
   };
-
-  // Prevent user from going to '/checkout' with an empty cart.
-  useEffect(() => {
-    if (!hasItems) {
-      navigate('/');
-    }
-  }, []);
 
   function createOrder(): Promise<string> {
     const apiUrl = `${SERVER_URL}:${SERVER_PORT}/api/create-order`;
@@ -108,6 +104,13 @@ export function Checkout() {
         });
     });
   }
+
+  // Prevent access to '/checkout' with an empty cart.
+  useEffect(() => {
+    if (!hasItems) {
+      navigate('/');
+    }
+  }, []);
 
   return (
     <React.Fragment>
@@ -335,26 +338,32 @@ export function Checkout() {
           </div>
         </div>
       ) : (
-        <React.Fragment>
-          <div className="h-80 flex flex-col justify-between min-w-[380px] max-w-xl mx-auto mt-8 p-4 border border-gray-300 rounded-md shadow">
-            <div className='h-60 flex flex-col items-center justify-center'>
-              <span className="font-bold text-2xl from-neutral-500">
-                Thanks for your purchase.
-              </span>
-              <hr className="w-80 border-t-2 border-dashed border-gray-300 my-4" />
-              <span className="font-semibold italic text-2xl from-neutral-500">
-                Enjoy your colors!
-              </span>
-            </div>
-            <span className="font-semibold mb-2">
-              Transaction Id:
-              <span className="pl-2 italic font-semibold">
-                {lastPurchase}
-              </span>
-            </span>
-          </div>
-        </React.Fragment>
+        <Thanks transactionId={lastPurchase} />
       )}
     </React.Fragment>
   );
 };
+
+function Thanks(props: { transactionId: string }) {
+  return (
+    <React.Fragment>
+      <div className="h-80 flex flex-col justify-between min-w-[380px] max-w-xl mx-auto mt-8 p-4 border border-gray-300 rounded-md shadow">
+        <div className='h-60 flex flex-col items-center justify-center'>
+          <span className="font-bold text-2xl from-neutral-500">
+            Thanks for your purchase.
+          </span>
+          <hr className="w-80 border-t-2 border-dashed border-gray-300 my-4" />
+          <span className="font-semibold italic text-2xl from-neutral-500">
+            Enjoy your colors!
+          </span>
+        </div>
+        <span className="font-semibold mb-2">
+          Transaction Id:
+          <span className="pl-2 italic font-semibold">
+            {props.transactionId}
+          </span>
+        </span>
+      </div>
+    </React.Fragment>
+  );
+}
