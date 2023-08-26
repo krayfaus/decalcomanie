@@ -112,7 +112,7 @@ export function Checkout() {
     if (!hasItems && pending) {
       navigate('/');
     }
-  }, [hasItems, navigate]);
+  }, [pending, hasItems, navigate]);
 
   return (
     <React.Fragment>

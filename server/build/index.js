@@ -27,18 +27,16 @@ const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 const Enviroment = process.env.NODE_ENV;
 app.use(body_parser_1.default.json());
-if (Enviroment === "development") {
-    /// Allow CORS for testing.
-    app.use((req, res, next) => {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, PATCH, DELETE");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        if (req.method === "OPTIONS") {
-            return res.sendStatus(200);
-        }
-        next();
-    });
-}
+/// Allow CORS until we implement proper certificates.
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, PATCH, DELETE");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+    next();
+});
 function getCountryCode(countryName) {
     const data = lookup.byCountry(countryName);
     if (data) {
@@ -195,6 +193,9 @@ app.post('/api/get-order', (req, res) => __awaiter(void 0, void 0, void 0, funct
         }
         res.status(500).json({ error: 'An error occurred while capturing the PayPal order.' });
     }
+}));
+app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.send('Décalmanie payment server.');
 }));
 app.listen(PORT, () => {
     console.log(`⚡️[server]: Server is running at port ${PORT}.`);

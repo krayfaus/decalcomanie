@@ -17,21 +17,19 @@ const Enviroment = process.env.NODE_ENV;
 
 app.use(BodyParser.json());
 
-if (Enviroment === "development") {
-  /// Allow CORS for testing.
-  app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "OPTIONS, GET, POST, PUT, PATCH, DELETE"
-    );
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(200);
-    }
-    next();
-  });
-}
+/// Allow CORS until we implement proper certificates.
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "OPTIONS, GET, POST, PUT, PATCH, DELETE"
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 type Product = {
   id: string,
@@ -238,6 +236,10 @@ app.post('/api/get-order', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'An error occurred while capturing the PayPal order.' });
   }
 });
+
+app.get('/', async (req: Request, res: Response) => {
+  res.send('Décalmanie payment server.');
+})
 
 app.listen(PORT, () => {
   console.log(`⚡️[server]: Server is running at port ${PORT}.`);

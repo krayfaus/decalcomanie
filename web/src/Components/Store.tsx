@@ -59,7 +59,7 @@ export function Store(props: { randomize: boolean, unsetRandomize: () => void })
       setFirstTime(false);
       getStoreItems();
     }
-  }, [props.randomize]);
+  }, [props.randomize, isReady, firstTime]);
 
   function addCartItem(event: React.MouseEvent<HTMLButtonElement>, storeItem: StoreItem) {
     const index = cart.findIndex((element) => element.id === storeItem.id);

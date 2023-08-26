@@ -1,22 +1,10 @@
-import React, { useState, useReducer } from 'react';
+import React, { useReducer } from 'react';
 import type { StoreItem } from '../Domain/Store';
 import { useCartDispatch, useCartState } from '../Hooks/Cart';
 import { Link } from 'react-router-dom';
 import ColorSquare from './ColorSquare';
 
-type CartCallbacks = {
-  changeQuantity: (
-    event: React.ChangeEvent<HTMLSelectElement>,
-    itemId: string
-  ) => void;
-  removeProduct: (
-    event: React.MouseEvent<HTMLDivElement>,
-    itemId: string
-  ) => void;
-};
-
 type MouseCallback = (event: React.MouseEvent<HTMLDivElement>, itemId: string) => void;
-type ChangeCallback = (event: React.ChangeEvent<HTMLSelectElement>, itemId: string) => void;
 
 export function Item(props: { item: StoreItem, removeItem?: MouseCallback}) {
   let hasRemove = props.removeItem !== undefined;
@@ -52,7 +40,8 @@ export function Item(props: { item: StoreItem, removeItem?: MouseCallback}) {
 }
 
 export function Cart(props: { isCartOpen: boolean; toggleCart: () => void }) {
-  const [ignored, forceUpdate] = useReducer(x => x + 1, 0);
+  // eslint-disable-next-line
+  const [_ignored, forceUpdate] = useReducer(x => x + 1, 0);
   const cart = useCartState();
   const setCart = useCartDispatch();
 
@@ -69,7 +58,7 @@ export function Cart(props: { isCartOpen: boolean; toggleCart: () => void }) {
 
   return (
     <React.Fragment>
-      <div className={`z-10 sidebar ${props.isCartOpen == true ? 'active' : ''}`}>
+      <div className={`z-10 sidebar ${props.isCartOpen === true ? 'active' : ''}`}>
         <div className="flex items-center justify-between p-4">
           <h4 className="mb-0 font-semibold">Shopping Cart</h4>
           <div className="btn btn-primary" onClick={props.toggleCart}>
@@ -88,7 +77,7 @@ export function Cart(props: { isCartOpen: boolean; toggleCart: () => void }) {
           </ul>
         </div>
         <div className="flex items-center justify-content-center pb-4 h-12 w-full absolute bottom-0">
-          {cart.length == 0 ? (
+          {cart.length === 0 ? (
             <span className="w-100 text-center font-semibold">
               The cart is empty!
             </span>
@@ -100,7 +89,7 @@ export function Cart(props: { isCartOpen: boolean; toggleCart: () => void }) {
           )}
         </div>
       </div>
-      <div className={`${props.isCartOpen == true ? '' : 'hidden'} z-0 inset-0 fixed h-screen w-screen bg-black opacity-80`} />
+      <div className={`${props.isCartOpen === true ? '' : 'hidden'} z-0 inset-0 fixed h-screen w-screen bg-black opacity-80`} />
     </React.Fragment >
   );
 }
