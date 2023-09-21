@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 import BodyParser from 'body-parser'; // Import the body-parser package
 import qs from 'qs';
 import { getUuid } from './Uuid';
-const lookup = require('country-code-lookup')
+const lookup = require('country-code-lookup');
 
-dotenv.config({ path: "./.env" })
+dotenv.config({ path: './.env' });
 
 const app = express();
 const PORT = process.env.PORT;
@@ -19,38 +19,38 @@ app.use(BodyParser.json());
 
 /// Allow CORS until we implement proper certificates.
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
-    "Access-Control-Allow-Methods",
-    "OPTIONS, GET, POST, PUT, PATCH, DELETE"
+    'Access-Control-Allow-Methods',
+    'OPTIONS, GET, POST, PUT, PATCH, DELETE'
   );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") {
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
   next();
 });
 
 type Product = {
-  id: string,
-  name: string,
-  price: string,
+  id: string;
+  name: string;
+  price: string;
 };
 
 type Customer = {
-  firstName: string,
-  lastName: string,
-  phone: string,
-  email: string,
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
 };
 
 type Shipping = {
-  address1: string,
-  address2: string,
-  zipCode: string,
-  city: string,
-  state: string,
-  country: string,
+  address1: string;
+  address2: string;
+  zipCode: string;
+  city: string;
+  state: string;
+  country: string;
 };
 
 function getCountryCode(countryName: string): string | null {
@@ -88,14 +88,20 @@ async function acquireAccessToken() {
 // Route to create a PayPal order
 app.post('/api/create-order', async (req: Request, res: Response) => {
   if (req.body === undefined) {
-    console.log("Undefined request body.");
-    return res.status(400).json({ error: 'Missing or invalid items in the request body.' });
+    console.log('Undefined request body.');
+    return res
+      .status(400)
+      .json({ error: 'Missing or invalid items in the request body.' });
   }
 
-  const { items, customer, shipping }: {
-    items: Product[],
-    customer: Customer,
-    shipping: Shipping,
+  const {
+    items,
+    customer,
+    shipping,
+  }: {
+    items: Product[];
+    customer: Customer;
+    shipping: Shipping;
   } = req.body;
 
   try {
@@ -104,7 +110,9 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
     // Todo: improve data normalization.
     const phoneNumber = customer.phone.replace(/\+|[^+\d]/g, '');
     const customerFullName = [customer.firstName, customer.lastName].join(' ');
-    const total = items.reduce((total: number, item) => total + Number(item.price), 0).toFixed(2);
+    const total = items
+      .reduce((total: number, item) => total + Number(item.price), 0)
+      .toFixed(2);
     const countryCode = getCountryCode(shipping.country);
     const transactionId = getUuid();
 
@@ -117,11 +125,11 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
             currency_code: 'USD',
             value: total,
             breakdown: {
-              "item_total": { "currency_code": "USD", "value": total },
-              "shipping": { "currency_code": "USD", "value": "0" },
-              "tax_total": { "currency_code": "USD", "value": "0" },
-              "discount": { "currency_code": "USD", "value": "0" }
-            }
+              item_total: { currency_code: 'USD', value: total },
+              shipping: { currency_code: 'USD', value: '0' },
+              tax_total: { currency_code: 'USD', value: '0' },
+              discount: { currency_code: 'USD', value: '0' },
+            },
           },
           items: items.map((item: any) => ({
             name: item.name,
@@ -144,17 +152,17 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
               admin_area_2: shipping.city,
               postal_code: shipping.zipCode,
               country_code: countryCode,
-            }
-          }
+            },
+          },
         },
       ],
       payment_source: {
-        "paypal": {
+        paypal: {
           experience_context: {
-            shipping_preference: "SET_PROVIDED_ADDRESS",
-            landing_page: "GUEST_CHECKOUT",
-            brand_name: "Décalcomanie",
-            locale: "en-US",
+            shipping_preference: 'SET_PROVIDED_ADDRESS',
+            landing_page: 'GUEST_CHECKOUT',
+            brand_name: 'Décalcomanie',
+            locale: 'en-US',
           },
           email_address: customer.email,
           name: {
@@ -162,7 +170,7 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
             surname: customer.lastName,
           },
           phone: {
-            phone_type: "MOBILE",
+            phone_type: 'MOBILE',
             phone_number: {
               national_number: phoneNumber,
             },
@@ -174,9 +182,9 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
             admin_area_1: shipping.state,
             admin_area_2: shipping.city,
             country_code: countryCode,
-          }
-        }
-      }
+          },
+        },
+      },
     };
 
     // Make a POST request to create the PayPal order in the Sandbox environment.
@@ -186,22 +194,24 @@ app.post('/api/create-order', async (req: Request, res: Response) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          // 'PayPal-Request-Id': transactionId,
+          'PayPal-Request-Id': transactionId,
           Authorization: `Bearer ${accessToken}`,
         },
       }
     );
 
-    if (Enviroment === "development") {
-      console.log("> Transaction:", transactionId)
-      console.log("> Order details:", response.data);
-      console.log("-------------------------------")
+    if (Enviroment === 'development') {
+      console.log('> Transaction:', transactionId);
+      console.log('> Order details:', response.data);
+      console.log('-------------------------------');
     }
 
     res.json({ orderId: response.data.id, transactionId: transactionId });
   } catch (error: any) {
     console.error('Error creating PayPal order:', error);
-    res.status(500).json({ error: 'An error occurred while creating the PayPal order.' });
+    res
+      .status(500)
+      .json({ error: 'An error occurred while creating the PayPal order.' });
   }
 });
 
@@ -213,8 +223,11 @@ app.post('/api/get-order', async (req: Request, res: Response) => {
     const accessToken = await acquireAccessToken();
 
     // Make a GET request to confirm the payment for the given order.
-    const response = await axios.get(
-      `${API_URL}/v2/checkout/orders/${orderId}`,
+    const response = await axios.post(
+      `${API_URL}/v2/checkout/orders/${orderId}/capture`,
+      {
+        // Empty request body.
+      },
       {
         headers: {
           'Content-Type': 'application/json',
@@ -229,17 +242,19 @@ app.post('/api/get-order', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error capturing PayPal order:', error, '\n');
 
-    if (Enviroment === "development") {
+    if (Enviroment === 'development') {
       console.log(error?.response?.data);
     }
 
-    res.status(500).json({ error: 'An error occurred while capturing the PayPal order.' });
+    res
+      .status(500)
+      .json({ error: 'An error occurred while capturing the PayPal order.' });
   }
 });
 
 app.get('/', async (req: Request, res: Response) => {
   res.send('Décalmanie payment server.');
-})
+});
 
 app.listen(PORT, () => {
   console.log(`⚡️[server]: Server is running at port ${PORT}.`);

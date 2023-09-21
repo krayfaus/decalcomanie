@@ -19,7 +19,7 @@ const body_parser_1 = __importDefault(require("body-parser")); // Import the bod
 const qs_1 = __importDefault(require("qs"));
 const Uuid_1 = require("./Uuid");
 const lookup = require('country-code-lookup');
-dotenv_1.default.config({ path: "./.env" });
+dotenv_1.default.config({ path: './.env' });
 const app = (0, express_1.default)();
 const PORT = process.env.PORT;
 const API_URL = process.env.PAYPAL_API_URL;
@@ -29,10 +29,10 @@ const Enviroment = process.env.NODE_ENV;
 app.use(body_parser_1.default.json());
 /// Allow CORS until we implement proper certificates.
 app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, PATCH, DELETE");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    if (req.method === "OPTIONS") {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
     next();
@@ -68,16 +68,20 @@ function acquireAccessToken() {
 // Route to create a PayPal order
 app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (req.body === undefined) {
-        console.log("Undefined request body.");
-        return res.status(400).json({ error: 'Missing or invalid items in the request body.' });
+        console.log('Undefined request body.');
+        return res
+            .status(400)
+            .json({ error: 'Missing or invalid items in the request body.' });
     }
-    const { items, customer, shipping } = req.body;
+    const { items, customer, shipping, } = req.body;
     try {
         const accessToken = yield acquireAccessToken();
         // Todo: improve data normalization.
         const phoneNumber = customer.phone.replace(/\+|[^+\d]/g, '');
         const customerFullName = [customer.firstName, customer.lastName].join(' ');
-        const total = items.reduce((total, item) => total + Number(item.price), 0).toFixed(2);
+        const total = items
+            .reduce((total, item) => total + Number(item.price), 0)
+            .toFixed(2);
         const countryCode = getCountryCode(shipping.country);
         const transactionId = (0, Uuid_1.getUuid)();
         // Construct the PayPal order request payload
@@ -89,11 +93,11 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
                         currency_code: 'USD',
                         value: total,
                         breakdown: {
-                            "item_total": { "currency_code": "USD", "value": total },
-                            "shipping": { "currency_code": "USD", "value": "0" },
-                            "tax_total": { "currency_code": "USD", "value": "0" },
-                            "discount": { "currency_code": "USD", "value": "0" }
-                        }
+                            item_total: { currency_code: 'USD', value: total },
+                            shipping: { currency_code: 'USD', value: '0' },
+                            tax_total: { currency_code: 'USD', value: '0' },
+                            discount: { currency_code: 'USD', value: '0' },
+                        },
                     },
                     items: items.map((item) => ({
                         name: item.name,
@@ -115,17 +119,17 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
                             admin_area_2: shipping.city,
                             postal_code: shipping.zipCode,
                             country_code: countryCode,
-                        }
-                    }
+                        },
+                    },
                 },
             ],
             payment_source: {
-                "paypal": {
+                paypal: {
                     experience_context: {
-                        shipping_preference: "SET_PROVIDED_ADDRESS",
-                        landing_page: "GUEST_CHECKOUT",
-                        brand_name: "Décalcomanie",
-                        locale: "en-US",
+                        shipping_preference: 'SET_PROVIDED_ADDRESS',
+                        landing_page: 'GUEST_CHECKOUT',
+                        brand_name: 'Décalcomanie',
+                        locale: 'en-US',
                     },
                     email_address: customer.email,
                     name: {
@@ -133,7 +137,7 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
                         surname: customer.lastName,
                     },
                     phone: {
-                        phone_type: "MOBILE",
+                        phone_type: 'MOBILE',
                         phone_number: {
                             national_number: phoneNumber,
                         },
@@ -145,28 +149,30 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
                         admin_area_1: shipping.state,
                         admin_area_2: shipping.city,
                         country_code: countryCode,
-                    }
-                }
-            }
+                    },
+                },
+            },
         };
         // Make a POST request to create the PayPal order in the Sandbox environment.
         const response = yield axios_1.default.post(`${API_URL}/v2/checkout/orders`, orderPayload, {
             headers: {
                 'Content-Type': 'application/json',
-                // 'PayPal-Request-Id': transactionId,
+                'PayPal-Request-Id': transactionId,
                 Authorization: `Bearer ${accessToken}`,
             },
         });
-        if (Enviroment === "development") {
-            console.log("> Transaction:", transactionId);
-            console.log("> Order details:", response.data);
-            console.log("-------------------------------");
+        if (Enviroment === 'development') {
+            console.log('> Transaction:', transactionId);
+            console.log('> Order details:', response.data);
+            console.log('-------------------------------');
         }
         res.json({ orderId: response.data.id, transactionId: transactionId });
     }
     catch (error) {
         console.error('Error creating PayPal order:', error);
-        res.status(500).json({ error: 'An error occurred while creating the PayPal order.' });
+        res
+            .status(500)
+            .json({ error: 'An error occurred while creating the PayPal order.' });
     }
 }));
 // Get the order payment information.
@@ -176,7 +182,9 @@ app.post('/api/get-order', (req, res) => __awaiter(void 0, void 0, void 0, funct
     try {
         const accessToken = yield acquireAccessToken();
         // Make a GET request to confirm the payment for the given order.
-        const response = yield axios_1.default.get(`${API_URL}/v2/checkout/orders/${orderId}`, {
+        const response = yield axios_1.default.post(`${API_URL}/v2/checkout/orders/${orderId}/capture`, {
+        // Empty request body.
+        }, {
             headers: {
                 'Content-Type': 'application/json',
                 'PayPal-Request-Id': transactionId,
@@ -188,10 +196,12 @@ app.post('/api/get-order', (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
     catch (error) {
         console.error('Error capturing PayPal order:', error, '\n');
-        if (Enviroment === "development") {
+        if (Enviroment === 'development') {
             console.log((_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data);
         }
-        res.status(500).json({ error: 'An error occurred while capturing the PayPal order.' });
+        res
+            .status(500)
+            .json({ error: 'An error occurred while capturing the PayPal order.' });
     }
 }));
 app.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {

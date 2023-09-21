@@ -7,8 +7,9 @@ import { Item } from './Cart';
 // Since we're currently deploying the webpage and the server from the same host
 // we are able to use the window location to avoid hardcoding a value here.
 const runningProduction = process.env.NODE_ENV === "production";
-const SERVER_URL = runningProduction ? 'http://' + window.location.host : "http://localhost";
+const SERVER_URL = runningProduction ? 'http://' + window.location.hostname : "http://localhost";
 const SERVER_PORT = "4000";
+const SERVER_API = `${SERVER_URL}:${SERVER_PORT}`;
 
 export function Checkout() {
   const [lastPurchase, setLastPurchase] = useState('');
@@ -67,7 +68,7 @@ export function Checkout() {
   };
 
   function createOrder() {
-    return fetch(`${SERVER_URL}:${SERVER_PORT}/api/create-order`, {
+    return fetch(`${SERVER_API}/api/create-order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -89,7 +90,7 @@ export function Checkout() {
 
   function onApprove(data: any, actions: any) {
     console.log("> Approved order:", data);
-    return fetch(`${SERVER_URL}:${SERVER_PORT}/api/get-order`, {
+    return fetch(`${SERVER_API}/api/get-order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
